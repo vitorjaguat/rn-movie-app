@@ -1,8 +1,10 @@
 import MovieCard from '@/components/MovieCard';
 import SearchBar from '@/components/SearchBar';
+import TrendingCard from '@/components/TrendingCard';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 import { fetchMovies } from '@/services/api';
+import { getTrendingMovies } from '@/services/appwrite';
 import { useFetch } from '@/services/useFetch';
 import { useRouter } from 'expo-router';
 import {
@@ -18,10 +20,24 @@ export default function Index() {
   const router = useRouter();
 
   const {
+    data: trendingMovies,
+    loading: trendingLoading,
+    error: trendingError,
+  } = useFetch(getTrendingMovies);
+
+  // useEffect(() => {
+  //   const trendingMoviesArr =
+  //     trendingMovies && trendingMovies?.length > 1
+  //       ? trendingMovies?.map((item) => item.title + ', ')
+  //       : [];
+  //   console.log('Trending Movies: ', trendingMoviesArr);
+  // }, [trendingMovies]);
+
+  const {
     data: movies,
     loading: moviesLoading,
     error: moviesError,
-  } = useFetch(() => fetchMovies({ query: '' }));
+  } = useFetch(() => fetchMovies({ query: 'deer' }));
 
   return (
     <View className='flex-1 bg-primary'>
@@ -34,21 +50,44 @@ export default function Index() {
       >
         <Image className='w-12 h-10 mt-20 mb-5 mx-auto' source={icons.logo} />
 
-        {moviesLoading ? (
+        {moviesLoading || trendingLoading ? (
           <ActivityIndicator
             size='large'
             color='#000ff'
             className='mt-10 self-center'
           />
-        ) : moviesError ? (
-          <Text className='text-white'>Error: {moviesError?.message}</Text>
+        ) : moviesError || trendingError ? (
+          <Text className='text-white'>
+            Error: {moviesError?.message || trendingError?.message}
+          </Text>
         ) : (
           <View className='flex-1 mt-5'>
             <SearchBar
               onPress={() => router.push('/search')}
               placeholder='Search for a movie'
             />
+
+            {trendingMovies && (
+              <View className='mt-10'>
+                <Text className='text-lg text-white font-bold mt-5 mb-3'>
+                  Trending Movies
+                </Text>
+              </View>
+            )}
+
             <>
+              <FlatList
+                className='mb-4 mt-3'
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                ItemSeparatorComponent={() => <View className='w-5' />}
+                data={trendingMovies}
+                renderItem={({ item, index }) => (
+                  <TrendingCard movie={item} index={index} />
+                )}
+                keyExtractor={(item) => item.movie_id.toString()}
+              />
+
               <Text className='text-lg text-white font-bold mt-5 mb-3'>
                 Latest Movies
               </Text>
